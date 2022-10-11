@@ -53,7 +53,7 @@ year int);
 """)
 
 songplay_table_create = ("""
-Create Table If not Exists songplay(songplay_id IDENTITY(0,1), \
+Create Table If not Exists songplay(songplay_id BIGINT IDENTITY(0,1) PRIMARY KEY, \
     start_time timestamp NOT NULL, user_id int NOT NULL, \
     level varchar, song_id varchar, \
     artist_id varchar, \
@@ -83,16 +83,16 @@ day int, week int, month int, year int, weekday varchar);
 # STAGING TABLES
 
 staging_events_copy = ("""
-copy staging_event from s3://udacity-dend/log_data
+copy staging_event from 's3://udacity-dend/log_data'
 credentials 'aws_iam_role={}'
 gzip delimiter ';' compupdate off region 'us-east-1';
-""").format(*config['IAM_ROLE'])
+""").format(config.get('IAM_ROLE', 'ARN'))
 
 staging_songs_copy = ("""
-copy staging_song from s3://udacity-dend/song_data
+copy staging_song from 's3://udacity-dend/song_data'
 credentials 'aws_iam_role={}'
 gzip delimiter ';' compupdate off region 'us-east-1';
-""").format(*config['IAM_ROLE'])
+""").format(config.get('IAM_ROLE', 'ARN'))
 
 # FINAL TABLES
 
@@ -117,11 +117,11 @@ songplay_table_insert = ("""
 #ON CONFLICT (songplay_id) DO NOTHING;
 
 user_table_insert = ("""
-    INSERT INTO user(user_id, first_name, last_name, gender, level)
+    INSERT INTO users(user_id, first_name, last_name, gender, level)
     SELECT DISTINCT user_id, first_name, last_name, gender, level
     FROM staging_event
     WHERE page = 'NextSong' 
-    WHERE user_id NOT IN (SELECT DISTINCT user_id from user);
+    WHERE user_id NOT IN (SELECT DISTINCT user_id from users);
 """)
 
 song_table_insert = ("""
